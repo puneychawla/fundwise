@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Fundwise</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#eef1ec!important;color-scheme:light!important;min-height:100vh;overflow-x:hidden}
+body{font-family:'DM Sans',sans-serif;color:#111a14;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+button,input{font-family:'DM Sans',sans-serif}
+
+/* ── MOBILE-FIRST RESPONSIVE ── */
+.page{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem 1rem;background:#eef1ec}
+.page-top{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:1.25rem 1rem 6rem;background:#eef1ec}
+.card{background:#fff;border-radius:18px;border:1px solid #e8ebe6;padding:1.75rem 1.25rem;width:100%;max-width:480px;box-shadow:0 2px 8px rgba(0,0,0,.06),0 8px 32px rgba(0,0,0,.04)}
+.card-wide{background:#fff;border-radius:18px;border:1px solid #e8ebe6;padding:1.5rem 1rem;width:100%;max-width:720px;box-shadow:0 2px 8px rgba(0,0,0,.06),0 8px 32px rgba(0,0,0,.04)}
+.metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.5rem}
+.tabs-bar{display:flex;gap:4px;background:#f8f9f7;border-radius:10px;padding:4px;margin-bottom:1.25rem;width:100%}
+.tab-btn{flex:1;padding:8px 10px;border-radius:6px;border:none;font-size:13px;font-weight:400;color:#5a6b5e;background:transparent;cursor:pointer;transition:all .12s;white-space:nowrap}
+.tab-btn.active{background:#fff;color:#111a14;font-weight:500;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.notif-row{display:flex;align-items:center;gap:10px}
+.notif-text{flex:1;min-width:0}
+.btn-primary{width:100%;padding:13px 20px;background:#1a6b3a;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:500;cursor:pointer;margin-top:10px;-webkit-tap-highlight-color:transparent}
+.btn-primary:active{opacity:.85}
+.btn-sec{padding:10px 14px;background:transparent;color:#111a14;border:1px solid #e8ebe6;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.btn-ghost{background:none;border:none;color:#1a6b3a;font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:8px 0;-webkit-tap-highlight-color:transparent}
+.fund-row{display:flex;align-items:center;gap:10px;border:1px solid #e8ebe6;border-radius:12px;padding:12px 14px;cursor:pointer;transition:all .12s;background:#fff;-webkit-tap-highlight-color:transparent}
+.fund-row.sel{border-color:#2d8f52;background:#f2faf5}
+.fund-row.sug{border-color:#dde8f8;background:#f8fbff}
+.fund-row.sug.added{border-color:#2563a8;background:#f0f6ff}
+.action-btns{display:flex;gap:8px;flex-wrap:wrap}
+.action-btns button{flex:1;min-width:120px;padding:9px 12px;border-radius:8px;border:1px solid #e8ebe6;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.fadein{animation:fadeUp .3s ease both}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.slidedown{animation:slideDown .25s ease both}
+
+/* tablet+ */
+@media(min-width:520px){
+  .page{padding:2rem 1.5rem}
+  .page-top{padding:2rem 1.5rem 6rem}
+  .card{padding:2.5rem}
+  .card-wide{padding:2rem 2rem}
+  .notif-row{gap:12px}
+  .tab-btn{font-size:14px;padding:8px 16px}
+  .btn-sec{padding:10px 16px;font-size:14px}
+}
+@media(min-width:720px){
+  .card-wide{padding:2rem 2.5rem}
+}
+/* small phones — shrink metrics further */
+@media(max-width:360px){
+  .metrics-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .metrics-grid > div:last-child{grid-column:1/-1}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef, useEffect } = React;
+
+const FUNDS_RAW = [
+  {name:"Mirae Asset Large Cap",     cat:"Large Cap",  nav:98.45,  units:1840.00, buyNav:80.70, sip:8000,  ret1y:24.8, overlap:72},
+  {name:"Axis Bluechip Fund",        cat:"Large Cap",  nav:52.30,  units:2250.00, buyNav:42.80, sip:5000,  ret1y:21.3, overlap:72},
+  {name:"HDFC Mid-Cap Opportunities",cat:"Mid Cap",    nav:134.20, units:980.00,  buyNav:110.00, sip:6000, ret1y:31.4, overlap:34},
+  {name:"Parag Parikh Flexi Cap",    cat:"Flexi Cap",  nav:71.80,  units:3100.00, buyNav:58.80, sip:7000,  ret1y:28.7, overlap:28},
+  {name:"SBI Small Cap Fund",        cat:"Small Cap",  nav:145.60, units:620.00,  buyNav:119.30, sip:5000, ret1y:38.2, overlap:18},
+  {name:"Kotak Gold Fund",           cat:"Gold",       nav:22.15,  units:8200.00, buyNav:18.10, sip:5000,  ret1y:22.6, overlap:5},
+  {name:"ICICI Pru Balanced Advantage",cat:"Hybrid",   nav:62.40,  units:2400.00, buyNav:51.10, sip:5000,  ret1y:19.4, overlap:41},
+  {name:"DSP Nifty 50 Index Fund",   cat:"Index",      nav:28.90,  units:5800.00, buyNav:23.60, sip:7000,  ret1y:23.1, overlap:85},
+  {name:"UTI Nifty Next 50 Index",   cat:"Index",      nav:18.40,  units:6200.00, buyNav:15.10, sip:5000,  ret1y:26.8, overlap:85},
+];
+
+const SUGGESTED_FUNDS = [
+  {name:"Motilal Oswal Nasdaq 100", cat:"International", nav:118.40, reason:"No international exposure in your portfolio. Adds geographic diversification.", overlap:5},
+  {name:"HDFC Corporate Bond Fund", cat:"Debt",           nav:28.72,  reason:"Your portfolio has no debt allocation. Adds stability and reduces overall volatility.", overlap:3},
+  {name:"Nippon India Small Cap",   cat:"Small Cap",      nav:92.15,  reason:"Different small-cap focus than SBI Small Cap — adds within-category diversification.", overlap:22},
+];
+
+function enrich(f, idx) {
+  const cv = f.nav * f.units, iv = f.buyNav * f.units;
+  const gainPct = ((cv - iv) / iv * 100).toFixed(1);
+  // Deterministic signals for a realistic demo mix
+  // 0=Mirae:invest, 1=Axis:hold, 2=HDFC Mid:exit, 3=Parag:invest,
+  // 4=SBI Small:exit, 5=Gold:hold, 6=Hybrid:hold, 7=DSP Index:invest, 8=UTI:hold
+  const signalMap = ["invest","hold","exit","hold","hold","hold","hold","hold","hold"];
+  const signal = signalMap[idx] || "hold";
+  let actionAmt = 0;
+  if (signal === "invest") actionAmt = Math.round(f.sip * 1.2 / 100) * 100;
+  else if (signal === "exit") actionAmt = Math.round(cv * 0.18 / 100) * 100;
+  return { ...f, cv, iv, gainPct, signal, actionAmt };
+}
+const FUNDS = FUNDS_RAW.map((f, i) => enrich(f, i));
+
+const SAMPLE_CSV = `Fund Name,Category,Current NAV (₹),Units Held,Purchase NAV (₹),Monthly SIP (₹),SIP Date,1Y Return (%),Overlap Score
+Mirae Asset Large Cap Fund,Large Cap,98.45,1840.00,52.10,8000,5,24.8,72
+Axis Bluechip Fund,Large Cap,52.30,2250.00,34.80,5000,5,21.3,72
+HDFC Mid-Cap Opportunities Fund,Mid Cap,134.20,980.00,74.20,6000,10,31.4,34
+Parag Parikh Flexi Cap Fund,Flexi Cap,71.80,3100.00,41.50,7000,7,28.7,28
+SBI Small Cap Fund,Small Cap,145.60,620.00,78.30,5000,3,38.2,18
+Kotak Gold Fund,Gold,22.15,8200.00,14.60,5000,15,22.6,5
+ICICI Pru Balanced Advantage Fund,Hybrid,62.40,2400.00,44.10,5000,12,19.4,41
+DSP Nifty 50 Index Fund,Index,28.90,5800.00,19.40,7000,1,23.1,85
+UTI Nifty Next 50 Index Fund,Index,18.40,6200.00,12.10,5000,1,26.8,85`;
+
+function downloadSampleCSV() {
+  const blob = new Blob([SAMPLE_CSV], {type:"text/csv"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "sample_portfolio.csv"; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ── shared inline styles (non-responsive stuff) ── */
+const S = {
+  h1:    {fontFamily:"'DM Serif Display',serif", fontSize:"clamp(24px,6vw,30px)", color:"#111a14", lineHeight:1.25, marginBottom:"0.6rem"},
+  h2:    {fontFamily:"'DM Serif Display',serif", fontSize:"clamp(19px,5vw,22px)", color:"#111a14", lineHeight:1.3, marginBottom:"0.5rem"},
+  sub:   {fontSize:"clamp(13px,3.5vw,15px)", color:"#5a6b5e", lineHeight:1.65, marginBottom:"1.75rem"},
+  label: {fontSize:12, fontWeight:500, color:"#5a6b5e", textTransform:"uppercase", letterSpacing:"0.6px", display:"block", marginBottom:7},
+  input: {width:"100%", border:"1px solid #e8ebe6", borderRadius:8, padding:"12px 14px", fontSize:16, color:"#111a14", background:"#fff", outline:"none"},
+};
+
+function Logo({ noMargin }) {
+  return (
+    <div style={{display:"flex", alignItems:"center", gap:10, marginBottom:noMargin?0:"2rem"}}>
+      <div style={{width:36,height:36,background:"#1a6b3a",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M3 14l4-5 3.5 3.5L15 6" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="15.5" cy="5.5" r="1.8" fill="white"/>
+        </svg>
+      </div>
+      <span style={{fontFamily:"'DM Serif Display',serif", fontSize:22, color:"#111a14"}}>Fundwise</span>
+    </div>
+  );
+}
+
+function StepDots({active}) {
+  return (
+    <div style={{display:"flex", gap:8, marginBottom:"1.75rem"}}>
+      {[0,1,2].map(i=><div key={i} style={{height:6,borderRadius:3,background:i===active?"#1a6b3a":"#e8ebe6",width:i===active?20:6,transition:"all .2s"}}/>)}
+    </div>
+  );
+}
+
+function Badge({children, v="cat"}) {
+  const map = {
+    cat:    {bg:"#e8f5ee",c:"#1a6b3a"}, overlap:{bg:"#fdf0ee",c:"#c0392b"},
+    invest: {bg:"#e8f5ee",c:"#1a6b3a"}, exit:   {bg:"#fdf8ee",c:"#b7860b"},
+    ok:     {bg:"#e8f5ee",c:"#1a6b3a"}, warn:   {bg:"#fdf8ee",c:"#b7860b"},
+    suggest:{bg:"#eef4fd",c:"#2563a8"},
+  };
+  const s = map[v]||map.cat;
+  return <span style={{background:s.bg,color:s.c,fontSize:11,fontWeight:500,borderRadius:6,padding:"3px 8px",whiteSpace:"nowrap",flexShrink:0}}>{children}</span>;
+}
+
+/* ─── WELCOME ─── */
+function Welcome({onNext}) {
+  return (
+    <div className="page">
+      <div className="card fadein">
+        <Logo />
+        <h1 style={S.h1}>Invest smartly,<br/>not just regularly.</h1>
+        <p style={S.sub}>Most SIPs run on autopilot — fixed date, no thought. Fundwise tells you when to invest more and when to step back, based on where your funds actually are today.</p>
+        <div style={{marginBottom:"1.75rem"}}>
+          {[
+            ["More than SIP",       "Time your investments within the month"],
+            ["Less than trading",   "No stocks, no daily charts, no noise"],
+            ["Daily nudges",        "WhatsApp & call when there's something to act on"],
+            ["You stay in control", "Suggestions only — every action is yours"],
+          ].map(([t,d])=>(
+            <div key={t} style={{display:"flex",alignItems:"flex-start",gap:10,marginBottom:12}}>
+              <div style={{width:20,height:20,borderRadius:"50%",background:"#e8f5ee",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:2}}>
+                <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#1a6b3a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </div>
+              <div>
+                <span style={{fontSize:14,fontWeight:500}}>{t}</span>
+                <span style={{fontSize:13,color:"#5a6b5e"}}> — {d}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <button className="btn-primary" onClick={onNext}>Get started</button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── PHONE ─── */
+function PhoneScreen({onNext}) {
+  const [phone,setPhone]=useState(""); const [otp,setOtp]=useState("");
+  const [sent,setSent]=useState(false); const [loading,setLoading]=useState(false);
+  const sendOtp=()=>{setLoading(true);setTimeout(()=>{setLoading(false);setSent(true);},700);};
+  const verify=()=>{setLoading(true);setTimeout(()=>{setLoading(false);onNext(phone);},700);};
+  return (
+    <div className="page">
+      <div className="card fadein">
+        <Logo />
+        <StepDots active={0} />
+        {!sent ? (
+          <>
+            <h2 style={S.h2}>What's your number?</h2>
+            <p style={S.sub}>We'll send a one-time password to verify your identity.</p>
+            <label style={S.label}>Mobile number</label>
+            <div style={{display:"flex",gap:8,marginBottom:10}}>
+              <div style={{border:"1px solid #e8ebe6",borderRadius:8,padding:"0 14px",display:"flex",alignItems:"center",fontSize:15,color:"#5a6b5e",background:"#f8f9f7",whiteSpace:"nowrap",flexShrink:0}}>+91</div>
+              <input style={S.input} type="tel" inputMode="numeric" maxLength={10} placeholder="98765 43210" value={phone} onChange={e=>setPhone(e.target.value.replace(/\D/g,"").slice(0,10))} autoFocus />
+            </div>
+            <button className="btn-primary" style={{opacity:phone.length===10&&!loading?1:0.4}} disabled={phone.length!==10||loading} onClick={sendOtp}>
+              {loading?"Sending…":"Send OTP"}
+            </button>
+          </>
+        ) : (
+          <>
+            <h2 style={S.h2}>Enter OTP</h2>
+            <p style={S.sub}>Sent to +91 {phone}. Enter the 6-digit code.</p>
+            <label style={S.label}>One-time password</label>
+            <input style={{...S.input,letterSpacing:10,fontSize:22,textAlign:"center",fontWeight:500,marginBottom:10}} type="tel" inputMode="numeric" maxLength={6} placeholder="· · · · · ·" value={otp} onChange={e=>setOtp(e.target.value.replace(/\D/g,"").slice(0,6))} autoFocus />
+            <button className="btn-primary" style={{opacity:otp.length===6&&!loading?1:0.4}} disabled={otp.length!==6||loading} onClick={verify}>
+              {loading?"Verifying…":"Verify & continue"}
+            </button>
+            <button className="btn-ghost" style={{display:"block",marginTop:8,width:"100%",textAlign:"center"}} onClick={()=>{setSent(false);setOtp("");}}>Change number</button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── UPLOAD ─── */
+function UploadScreen({onNext}) {
+  const [analyzing,setAnalyzing]=useState(false);
+  const [progress,setProgress]=useState(0);
+  const fileRef=useRef();
+  const steps=["Reading fund names and NAVs","Checking category overlaps","Identifying diversification gaps","Running today's timing signals"];
+  const start=()=>{
+    setAnalyzing(true);setProgress(0);
+    let p=0;
+    const iv=setInterval(()=>{
+      p+=Math.random()*14+4;
+      if(p>=100){clearInterval(iv);setProgress(100);setTimeout(onNext,400);return;}
+      setProgress(Math.min(p,99));
+    },180);
+  };
+  if(analyzing) return (
+    <div className="page">
+      <div className="card fadein">
+        <Logo />
+        <h2 style={S.h2}>Analysing your portfolio</h2>
+        <p style={{...S.sub,marginBottom:"1.5rem"}}>Just a few seconds.</p>
+        <div style={{height:4,background:"#e8f5ee",borderRadius:4,overflow:"hidden",marginBottom:"1.5rem"}}>
+          <div style={{height:"100%",background:"#1a6b3a",borderRadius:4,width:`${progress}%`,transition:"width .18s"}}/>
+        </div>
+        {steps.map((t,i)=>(
+          <div key={t} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 0",borderBottom:"1px solid #e8ebe6"}}>
+            <div style={{width:18,height:18,borderRadius:"50%",background:progress>(i+1)*22?"#e8f5ee":"#f8f9f7",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              {progress>(i+1)*22&&<svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#1a6b3a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+            </div>
+            <span style={{fontSize:13,color:progress>(i+1)*22?"#111a14":"#9aaa9d"}}>{t}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+  return (
+    <div className="page">
+      <div className="card fadein">
+        <Logo />
+        <StepDots active={1} />
+        <h2 style={S.h2}>Upload your portfolio</h2>
+        <p style={S.sub}>Share your statement from Groww, Zerodha, CAMS, Kfintech, or MFU. We read it, we analyse it — that's all we do with it.</p>
+        <div onClick={()=>fileRef.current.click()} style={{border:"1.5px dashed #d8e8d8",borderRadius:14,padding:"2rem 1.5rem",textAlign:"center",cursor:"pointer",background:"#f2faf5",marginBottom:"1.25rem"}}
+          onMouseEnter={e=>e.currentTarget.style.borderColor="#2d8f52"} onMouseLeave={e=>e.currentTarget.style.borderColor="#d8e8d8"}>
+          <div style={{width:48,height:48,background:"#fff",borderRadius:12,border:"1px solid #e8ebe6",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px",boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2d8f52" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <p style={{fontSize:15,fontWeight:500,marginBottom:4}}>Drop your statement here</p>
+          <p style={{fontSize:13,color:"#5a6b5e",marginBottom:12}}>CSV or Excel — from any broker</p>
+          <button onClick={e=>{e.stopPropagation();downloadSampleCSV();}} style={{background:"none",border:"1px solid #b8dfc6",borderRadius:6,padding:"5px 14px",fontSize:12,color:"#1a6b3a",cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
+            ↓ Download sample file
+          </button>
+          <input ref={fileRef} type="file" accept=".csv,.xlsx" style={{display:"none"}} onChange={start}/>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:12,margin:"0 0 1rem"}}>
+          <div style={{flex:1,height:1,background:"#e8ebe6"}}/><span style={{fontSize:12,color:"#9aaa9d"}}>or</span><div style={{flex:1,height:1,background:"#e8ebe6"}}/>
+        </div>
+        <button className="btn-sec" style={{width:"100%"}} onClick={start}>Load sample portfolio</button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── REVIEW ─── */
+function ReviewScreen({onNext}) {
+  const [selected,setSelected]=useState(new Set(FUNDS.map(f=>f.name)));
+  const [addedSugg,setAddedSugg]=useState(new Set());
+  const sel=FUNDS.filter(f=>selected.has(f.name));
+  const hiOv=sel.filter(f=>f.overlap>70);
+  const existingCats=new Set(sel.map(f=>f.cat));
+  const score=Math.min(95,Math.max(40,70+Math.min(existingCats.size*4,20)-hiOv.length*8));
+  const C=2*Math.PI*28, dash=(score/100)*C;
+  const toggle=n=>setSelected(p=>{const s=new Set(p);s.has(n)?s.delete(n):s.add(n);return s;});
+  const toggleAll=()=>setSelected(p=>p.size===FUNDS.length?new Set():new Set(FUNDS.map(f=>f.name)));
+  const toggleSug=n=>setAddedSugg(p=>{const s=new Set(p);s.has(n)?s.delete(n):s.add(n);return s;});
+  const total=selected.size+addedSugg.size;
+
+  return (
+    <div className="page-top">
+      <div className="card-wide fadein" style={{marginTop:0}}>
+        {/* Header */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1.5rem"}}>
+          <Logo noMargin/><StepDots active={2}/>
+        </div>
+
+        {/* Health score */}
+        <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:"1.25rem"}}>
+          <div style={{position:"relative",width:64,height:64,flexShrink:0}}>
+            <svg width="64" height="64" viewBox="0 0 72 72" style={{transform:"rotate(-90deg)"}}>
+              <circle cx="36" cy="36" r="28" fill="none" stroke="#e8ebe6" strokeWidth="6"/>
+              <circle cx="36" cy="36" r="28" fill="none" stroke="#1a6b3a" strokeWidth="6" strokeDasharray={`${dash} ${C}`} strokeLinecap="round"/>
+            </svg>
+            <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",fontSize:15,fontWeight:600,color:"#1a6b3a"}}>{score}</div>
+          </div>
+          <div style={{flex:1,minWidth:0}}>
+            <h2 style={{...S.h2,marginBottom:3}}>Your portfolio, reviewed.</h2>
+            <p style={{fontSize:13,color:"#5a6b5e"}}>Health score: {score}/100. {hiOv.length>0?`${hiOv.length} fund${hiOv.length>1?"s":""} with high overlap.`:"Diversification looks good."}</p>
+          </div>
+        </div>
+
+        {/* Overlap warning */}
+        {hiOv.length>0&&(
+          <div style={{background:"#fffbeb",border:"1px solid #f0d070",borderRadius:10,padding:"10px 14px",marginBottom:"1rem",display:"flex",gap:10}}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b7860b" strokeWidth="2" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <p style={{fontSize:13,color:"#7a5c00",lineHeight:1.5}}>
+              <strong>{hiOv.slice(0,2).map(f=>f.name.split(" ").slice(0,2).join(" ")).join(" and ")}</strong> share {hiOv[0].overlap}% of holdings. They move together, limiting buy-low sell-high opportunities.
+            </p>
+          </div>
+        )}
+
+        {/* Your funds */}
+        <p style={{fontSize:13,color:"#5a6b5e",marginBottom:"0.6rem"}}>Select the funds you want Fundwise to watch.</p>
+        <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:"1rem"}}>
+          {FUNDS.map(f=>{
+            const isSel=selected.has(f.name);
+            return (
+              <div key={f.name} className={`fund-row${isSel?" sel":""}`} onClick={()=>toggle(f.name)}>
+                <div style={{width:20,height:20,borderRadius:6,border:isSel?"none":"1.5px solid #d0d8d0",background:isSel?"#1a6b3a":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  {isSel&&<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                </div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:3}}>
+                    <span style={{fontSize:14,fontWeight:500}}>{f.name}</span>
+                    <Badge v="cat">{f.cat}</Badge>
+                    {f.overlap>70&&<Badge v="overlap">Overlap</Badge>}
+                  </div>
+                  <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                    <span style={{fontSize:12,color:"#5a6b5e"}}>₹{f.cv.toLocaleString("en-IN",{maximumFractionDigits:0})}</span>
+                    <span style={{fontSize:12,color:parseFloat(f.gainPct)>=0?"#1a6b3a":"#c0392b"}}>{f.gainPct>0?"+":""}{f.gainPct}%</span>
+                    {f.sip>0&&<span style={{fontSize:12,color:"#9aaa9d"}}>SIP ₹{f.sip.toLocaleString()}/mo</span>}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderTop:"1px solid #e8ebe6",marginBottom:"1.25rem"}}>
+          <span style={{fontSize:13,color:"#5a6b5e"}}>{selected.size} of {FUNDS.length} selected</span>
+          <button className="btn-sec" style={{fontSize:12,padding:"5px 12px"}} onClick={toggleAll}>{selected.size===FUNDS.length?"Deselect all":"Select all"}</button>
+        </div>
+
+        {/* Suggested funds */}
+        <div style={{borderTop:"1px solid #e8ebe6",paddingTop:"1rem",marginBottom:"1rem"}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+            <span style={{fontSize:13,fontWeight:600,color:"#111a14"}}>Suggested for diversification</span>
+            <Badge v="suggest">Recommended</Badge>
+          </div>
+          <p style={{fontSize:13,color:"#5a6b5e",marginBottom:"0.75rem",lineHeight:1.5}}>
+            Based on your holdings, these funds fill gaps in your portfolio. Add them to get alerts when to invest.
+          </p>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {SUGGESTED_FUNDS.map(f=>{
+              const isAdded=addedSugg.has(f.name);
+              const isNewCat=!existingCats.has(f.cat);
+              return (
+                <div key={f.name} className={`fund-row sug${isAdded?" added":""}`} onClick={()=>toggleSug(f.name)}>
+                  <div style={{width:20,height:20,borderRadius:6,border:isAdded?"none":"1.5px solid #a8c4e8",background:isAdded?"#2563a8":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    {isAdded&&<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:3}}>
+                      <span style={{fontSize:14,fontWeight:500}}>{f.name}</span>
+                      <Badge v="suggest">{f.cat}</Badge>
+                      {isNewCat&&<Badge v="ok">New category</Badge>}
+                    </div>
+                    <p style={{fontSize:12,color:"#5a6b5e",lineHeight:1.45}}>{f.reason}</p>
+                  </div>
+                  <span style={{fontSize:12,color:isAdded?"#2563a8":"#9aaa9d",fontWeight:500,flexShrink:0,marginLeft:4}}>
+                    {isAdded?"✓ Added":"+ Add"}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div style={{height:8}}/>
+      </div>
+
+      {/* Floating save button */}
+      <div style={{position:"fixed",bottom:0,left:0,right:0,padding:"10px 16px 20px",background:"linear-gradient(to top, #eef1ec 65%, transparent)",zIndex:100}}>
+        <button
+          className="btn-primary"
+          style={{maxWidth:720,margin:"0 auto",display:"block",opacity:selected.size===0?0.4:1,boxShadow:"0 4px 20px rgba(26,107,58,.25)",marginTop:0}}
+          disabled={selected.size===0}
+          onClick={()=>onNext([...selected],[...addedSugg])}
+        >
+          Save {total} fund{total!==1?"s":""}
+          {addedSugg.size>0&&<span style={{fontSize:12,fontWeight:400,opacity:.85}}> ({selected.size} yours · {addedSugg.size} suggested)</span>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── DASHBOARD ─── */
+function Dashboard({phone,selectedNames,suggestedNames,onEdit}) {
+  const [tab,setTab]=useState("today");
+  const [waOn,setWaOn]=useState(false);
+  const [callOn,setCallOn]=useState(false);
+  const [toast,setToast]=useState(null);
+  const [done,setDone]=useState(new Set());
+  const [reminded,setReminded]=useState(new Set());
+  const [dismissed,setDismissed]=useState(new Set());
+
+  const showToast=(msg,color)=>{setToast({msg,color});setTimeout(()=>setToast(null),3000);};
+  const selFunds=FUNDS.filter(f=>selectedNames.has(f.name));
+  const sugFunds=SUGGESTED_FUNDS.filter(f=>suggestedNames.has(f.name));
+  const totalVal=selFunds.reduce((s,f)=>s+f.cv,0);
+  const totalInv=selFunds.reduce((s,f)=>s+f.iv,0);
+  const gainPct=totalInv>0?((totalVal-totalInv)/totalInv*100).toFixed(1):0;
+  const sip=selFunds.reduce((s,f)=>s+(f.sip||0),0);
+  const suggestions=selFunds.filter(f=>(f.signal==="invest"||f.signal==="exit")&&!dismissed.has(f.name));
+
+  return (
+    <div className="page-top">
+      {toast&&(
+        <div className="slidedown" style={{position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",background:toast.color,color:"#fff",borderRadius:10,padding:"10px 18px",fontSize:13,fontWeight:500,zIndex:1000,boxShadow:"0 4px 16px rgba(0,0,0,.15)",whiteSpace:"nowrap",maxWidth:"calc(100vw - 32px)",overflow:"hidden",textOverflow:"ellipsis"}}>
+          {toast.msg}
+        </div>
+      )}
+      <div className="card-wide fadein" style={{marginTop:0}}>
+
+        {/* Header */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1.25rem"}}>
+          <Logo noMargin/>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            {suggestions.length>0
+              ?<Badge v="warn">{suggestions.length} suggestion{suggestions.length>1?"s":""} today</Badge>
+              :<Badge v="ok">All clear today</Badge>}
+            <div style={{width:32,height:32,borderRadius:"50%",background:"#e8f5ee",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1a6b3a" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Notification banner */}
+        <div style={{background:"#f2faf5",border:"1px solid #b8dfc6",borderRadius:12,padding:"14px",marginBottom:"1.25rem"}}>
+          <p style={{fontSize:11,fontWeight:600,color:"#1a6b3a",marginBottom:10,textTransform:"uppercase",letterSpacing:"0.5px"}}>Stay notified</p>
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {/* WhatsApp */}
+            <div className="notif-row">
+              <div style={{width:34,height:34,background:"#25D366",borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.136.559 4.14 1.535 5.878L0 24l6.302-1.513A11.942 11.942 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.898 0-3.67-.52-5.183-1.428l-.371-.22-3.742.898.939-3.638-.242-.381A9.96 9.96 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+              </div>
+              <div className="notif-text">
+                <p style={{fontSize:13,fontWeight:500,marginBottom:1}}>WhatsApp alerts</p>
+                <p style={{fontSize:11,color:"#5a6b5e"}}>Message by 1:30 PM on actionable days</p>
+              </div>
+              <button onClick={()=>{if(!waOn){setWaOn(true);showToast("✓ WhatsApp enabled for +91 "+phone,"#1a6b3a");}}} style={{padding:"6px 14px",borderRadius:8,border:"none",fontSize:12,fontWeight:500,cursor:"pointer",background:waOn?"#e8f5ee":"#1a6b3a",color:waOn?"#1a6b3a":"#fff",flexShrink:0,transition:"all .2s",whiteSpace:"nowrap"}}>
+                {waOn?"✓ On":"Enable"}
+              </button>
+            </div>
+            <div style={{height:1,background:"#c8e8d0"}}/>
+            {/* Call */}
+            <div className="notif-row">
+              <div style={{width:34,height:34,background:"#3b82f6",borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.13 1.16 2 2 0 012.11 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+              </div>
+              <div className="notif-text">
+                <p style={{fontSize:13,fontWeight:500,marginBottom:1}}>Quick call reminder</p>
+                <p style={{fontSize:11,color:"#5a6b5e"}}>Short call at 2 PM on actionable days</p>
+              </div>
+              <button onClick={()=>{if(!callOn){setCallOn(true);showToast("✓ 2 PM call enabled for +91 "+phone,"#3b82f6");}}} style={{padding:"6px 14px",borderRadius:8,border:"none",fontSize:12,fontWeight:500,cursor:"pointer",background:callOn?"#e8f0fe":"#3b82f6",color:callOn?"#1d4ed8":"#fff",flexShrink:0,transition:"all .2s",whiteSpace:"nowrap"}}>
+                {callOn?"✓ On":"Enable"}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Metrics */}
+        <div className="metrics-grid">
+          {[
+            {label:"Portfolio value", val:`₹${(totalVal/100000).toFixed(2)}L`},
+            {label:"Overall gain",    val:`${gainPct>0?"+":""}${gainPct}%`, color:parseFloat(gainPct)>=0?"#1a6b3a":"#c0392b"},
+            {label:"Monthly SIP",     val:`₹${(sip/1000).toFixed(1)}K`},
+          ].map(m=>(
+            <div key={m.label} style={{background:"#f8f9f7",border:"1px solid #e8ebe6",borderRadius:10,padding:"12px 12px"}}>
+              <div style={{fontSize:10,fontWeight:500,color:"#9aaa9d",textTransform:"uppercase",letterSpacing:"0.4px",marginBottom:4}}>{m.label}</div>
+              <div style={{fontSize:"clamp(16px,4.5vw,20px)",fontWeight:500,color:m.color||"#111a14"}}>{m.val}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Tabs */}
+        <div className="tabs-bar">
+          {[["today","Today's suggestions"],["funds","My funds"]].map(([id,label])=>(
+            <button key={id} className={`tab-btn${tab===id?" active":""}`} onClick={()=>setTab(id)}>{label}</button>
+          ))}
+        </div>
+
+        {/* TODAY */}
+        {tab==="today"&&(
+          <div>
+            {suggestions.length===0?(
+              <div style={{textAlign:"center",padding:"2rem 1rem"}}>
+                <div style={{width:52,height:52,background:"#e8f5ee",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px"}}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#1a6b3a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
+                <p style={{fontSize:16,fontWeight:500,marginBottom:6}}>You're all set for today</p>
+                <p style={{fontSize:13,color:"#5a6b5e",maxWidth:300,margin:"0 auto",lineHeight:1.6}}>No action needed. We check every day at 1:30 PM and will alert you when it's time to invest or book profits.</p>
+              </div>
+            ):(
+              <>
+                <p style={{fontSize:13,color:"#5a6b5e",marginBottom:"0.875rem"}}>Based on today's NAV movement. The final call is always yours.</p>
+                {suggestions.map(f=>{
+                  const isDone=done.has(f.name);
+                  const isReminded=reminded.has(f.name);
+                  const isInvest=f.signal==="invest";
+                  const amtFmt=`₹${f.actionAmt.toLocaleString("en-IN")}`;
+                  return (
+                    <div key={f.name} style={{background:"#fff",border:"1px solid #e8ebe6",borderRadius:12,padding:"14px",marginBottom:10,opacity:isDone?.5:1,transition:"opacity .3s"}}>
+                      {/* Header */}
+                      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8,marginBottom:8}}>
+                        <div style={{flex:1,minWidth:0}}>
+                          <p style={{fontSize:14,fontWeight:500,marginBottom:5}}>{f.name}</p>
+                          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                            <Badge v="cat">{f.cat}</Badge>
+                            <Badge v={isInvest?"invest":"exit"}>{isInvest?"Good time to invest":"Good time to book profit"}</Badge>
+                          </div>
+                        </div>
+                        <button onClick={()=>setDismissed(p=>new Set([...p,f.name]))} style={{background:"none",border:"none",color:"#9aaa9d",cursor:"pointer",fontSize:20,lineHeight:1,padding:2,flexShrink:0}}>×</button>
+                      </div>
+                      {/* Reason */}
+                      <p style={{fontSize:13,color:"#5a6b5e",lineHeight:1.55,marginBottom:10}}>
+                        {isInvest
+                          ?`${f.name.split(" ")[0]}'s NAV is near a 20-day low. A good window to add to this fund today rather than waiting for your usual SIP date.`
+                          :`${f.name.split(" ")[0]} is up ${f.ret1y}% this year and near a recent high. Consider booking partial profits — reinvest when it dips.`}
+                      </p>
+                      {/* Action box */}
+                      <div style={{background:isInvest?"#f2faf5":"#fdf8ee",border:`1px solid ${isInvest?"#b8dfc6":"#e8d080"}`,borderRadius:10,padding:"12px 14px",marginBottom:10}}>
+                        <p style={{fontSize:11,fontWeight:600,color:isInvest?"#1a6b3a":"#b7860b",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.4px"}}>Suggested action</p>
+                        <p style={{fontSize:12,color:"#5a6b5e",marginBottom:4}}>{isInvest?"Invest approximately":"Exit approximately"}</p>
+                        <p style={{fontSize:28,fontWeight:600,color:isInvest?"#1a6b3a":"#b7860b",lineHeight:1}}>{amtFmt}</p>
+                        <p style={{fontSize:11,color:"#9aaa9d",marginTop:6}}>
+                          {isInvest
+                            ?`~1.2× your monthly SIP of ₹${f.sip.toLocaleString()} — timed to today's dip.`
+                            :`~18% of your ₹${f.cv.toLocaleString("en-IN",{maximumFractionDigits:0})} holding. Partial exit only.`}
+                        </p>
+                      </div>
+                      {/* Buttons */}
+                      <div className="action-btns">
+                        <button onClick={()=>{setDone(p=>new Set([...p,f.name]));showToast("Marked as done — great work!","#1a6b3a");}} style={{background:isDone?"#e8f5ee":"#fff",color:isDone?"#1a6b3a":"#111a14"}}>
+                          {isDone?"✓ Done":"Mark as done"}
+                        </button>
+                        <button onClick={()=>{setReminded(p=>new Set([...p,f.name]));showToast("Reminder set for 2 PM today","#3b82f6");}} style={{background:isReminded?"#e8f0fe":"#fff",color:isReminded?"#1d4ed8":"#5a6b5e"}}>
+                          {isReminded?"✓ Set":"Remind me later"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* FUNDS */}
+        {tab==="funds"&&(
+          <div>
+            {selFunds.map(f=>(
+              <div key={f.name} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 0",borderBottom:"1px solid #e8ebe6"}}>
+                <div style={{flex:1,minWidth:0,paddingRight:8}}>
+                  <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2,flexWrap:"wrap"}}>
+                    <span style={{fontSize:14,fontWeight:500}}>{f.name}</span>
+                    <Badge v="cat">{f.cat}</Badge>
+                  </div>
+                  <span style={{fontSize:12,color:"#5a6b5e"}}>₹{f.cv.toLocaleString("en-IN",{maximumFractionDigits:0})} · {((f.cv/totalVal)*100).toFixed(1)}%</span>
+                </div>
+                <div style={{textAlign:"right",flexShrink:0}}>
+                  <p style={{fontSize:14,fontWeight:500,color:parseFloat(f.gainPct)>=0?"#1a6b3a":"#c0392b",marginBottom:1}}>{f.gainPct>0?"+":""}{f.gainPct}%</p>
+                  <p style={{fontSize:11,color:"#9aaa9d"}}>₹{f.nav}</p>
+                </div>
+              </div>
+            ))}
+            {sugFunds.length>0&&(
+              <>
+                <div style={{padding:"8px 0 4px",marginTop:4}}>
+                  <span style={{fontSize:11,fontWeight:500,color:"#9aaa9d",textTransform:"uppercase",letterSpacing:"0.5px"}}>Suggested — tracking for alerts</span>
+                </div>
+                {sugFunds.map(f=>(
+                  <div key={f.name} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 0",borderBottom:"1px solid #e8ebe6"}}>
+                    <div style={{flex:1,minWidth:0,paddingRight:8}}>
+                      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2,flexWrap:"wrap"}}>
+                        <span style={{fontSize:14,fontWeight:500}}>{f.name}</span>
+                        <Badge v="suggest">{f.cat}</Badge>
+                      </div>
+                      <span style={{fontSize:12,color:"#5a6b5e"}}>NAV ₹{f.nav} · Not yet invested</span>
+                    </div>
+                    <div style={{textAlign:"right",flexShrink:0}}>
+                      <p style={{fontSize:11,color:"#9aaa9d"}}>Alert when</p>
+                      <p style={{fontSize:12,color:"#2563a8",fontWeight:500}}>good to enter</p>
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
+            <div style={{marginTop:"1rem",textAlign:"center"}}>
+              <button className="btn-ghost" onClick={onEdit}>Edit tracked funds</button>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
+/* ─── ROOT ─── */
+function App() {
+  const [screen,setScreen]=useState("welcome");
+  const [phone,setPhone]=useState("");
+  const [selectedNames,setSelectedNames]=useState(new Set(FUNDS.map(f=>f.name)));
+  const [suggestedNames,setSuggestedNames]=useState(new Set());
+
+  const navigate = (s) => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+    setScreen(s);
+  };
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [screen]);
+
+  return (
+    <>
+      {screen==="welcome"   &&<Welcome onNext={()=>navigate("phone")}/>}
+      {screen==="phone"     &&<PhoneScreen onNext={p=>{setPhone(p);navigate("upload");}}/>}
+      {screen==="upload"    &&<UploadScreen onNext={()=>navigate("review")}/>}
+      {screen==="review"    &&<ReviewScreen onNext={(sel,sug)=>{setSelectedNames(new Set(sel));setSuggestedNames(new Set(sug));navigate("dashboard");}}/>}
+      {screen==="dashboard" &&<Dashboard phone={phone} selectedNames={selectedNames} suggestedNames={suggestedNames} onEdit={()=>navigate("review")}/>}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
