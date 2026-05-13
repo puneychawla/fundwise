@@ -26,15 +26,15 @@ const { useState, useRef } = React;
 
 /* ── YOUR FUNDS — already invested ── */
 const FUNDS_RAW = [
-  {name:"Mirae Asset Large Cap",    cat:"Large Cap",  nav:98.45,  units:245.32, buyNav:72.10, sip:5000, ret1y:12.4, overlap:72},
-  {name:"Axis Bluechip Fund",       cat:"Large Cap",  nav:52.30,  units:180.50, buyNav:41.20, sip:3000, ret1y:10.1, overlap:72},
-  {name:"HDFC Mid-Cap Opportunities",cat:"Mid Cap",   nav:134.20, units:89.10,  buyNav:88.40, sip:3000, ret1y:22.1, overlap:34},
-  {name:"Parag Parikh Flexi Cap",   cat:"Flexi Cap",  nav:71.80,  units:320.00, buyNav:48.30, sip:5000, ret1y:18.9, overlap:28},
-  {name:"SBI Small Cap Fund",       cat:"Small Cap",  nav:145.60, units:55.20,  buyNav:95.30, sip:2000, ret1y:31.2, overlap:18},
-  {name:"Kotak Gold Fund",          cat:"Gold",       nav:22.15,  units:890.00, buyNav:16.40, sip:2000, ret1y:19.8, overlap:5},
-  {name:"ICICI Pru Balanced Advantage",cat:"Hybrid",  nav:62.40,  units:210.40, buyNav:52.10, sip:3000, ret1y:14.2, overlap:41},
-  {name:"DSP Nifty 50 Index Fund",  cat:"Index",      nav:28.90,  units:520.00, buyNav:22.10, sip:3000, ret1y:13.8, overlap:85},
-  {name:"UTI Nifty Next 50 Index",  cat:"Index",      nav:18.40,  units:610.00, buyNav:14.20, sip:2000, ret1y:15.2, overlap:85},
+  {name:"Mirae Asset Large Cap",    cat:"Large Cap",  nav:98.45,  units:2450.32, buyNav:72.10, sip:15000, ret1y:12.4, overlap:72},
+  {name:"Axis Bluechip Fund",       cat:"Large Cap",  nav:52.30,  units:1800.50, buyNav:41.20, sip:13000, ret1y:10.1, overlap:72},
+  {name:"HDFC Mid-Cap Opportunities",cat:"Mid Cap",   nav:134.20, units:890.10,  buyNav:88.40, sip:8000, ret1y:22.1, overlap:34},
+  {name:"Parag Parikh Flexi Cap",   cat:"Flexi Cap",  nav:71.80,  units:3200.00, buyNav:48.30, sip:15000, ret1y:18.9, overlap:28},
+  {name:"SBI Small Cap Fund",       cat:"Small Cap",  nav:145.60, units:550.20,  buyNav:95.30, sip:20000, ret1y:31.2, overlap:18},
+  {name:"Kotak Gold Fund",          cat:"Gold",       nav:22.15,  units:8900.00, buyNav:16.40, sip:20000, ret1y:19.8, overlap:5},
+  {name:"ICICI Pru Balanced Advantage",cat:"Hybrid",  nav:62.40,  units:2100.40, buyNav:52.10, sip:13000, ret1y:14.2, overlap:41},
+  {name:"DSP Nifty 50 Index Fund",  cat:"Index",      nav:28.90,  units:5200.00, buyNav:22.10, sip:13000, ret1y:13.8, overlap:85},
+  {name:"UTI Nifty Next 50 Index",  cat:"Index",      nav:18.40,  units:6100.00, buyNav:14.20, sip:12000, ret1y:15.2, overlap:85},
 ];
 
 /* ── SUGGESTED FUNDS — not yet invested, recommended for diversification ── */
